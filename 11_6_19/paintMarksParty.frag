@@ -7,19 +7,27 @@ uniform vec2 u_resolution;
 uniform vec2 u_mouse;
 uniform float u_time;
 
-vec2 rotate2D(vec2 st, float _angle){
-    st =  mat2(cos(_angle),-sin(_angle),
-                sin(_angle),cos(_angle)) * st;
-    return st;
+vec3 Flower(vec2 st, vec3 color){
+    float pct = 0.0;
+    st-= .5; //centering
+    float radius = length(st) * 3.5;
+    float a = atan(st.y,st.x);
+    float f= abs(cos(a*2.5))+.4;
+    vec3 temp = vec3(1. - smoothstep(f,radius, .9));
+    temp += color;
+    return temp;
+}
+
+vec2 rotate2D(vec2 _st, float _angle){
+    _st =  mat2(cos(_angle),-sin(_angle),
+                sin(_angle),cos(_angle)) * _st;
+    return _st;
 }
 vec2 tile(vec2 st, float zoom){
     st *= zoom;
-    //vec2 st_i = floor(st);
-    //if (mod(st_i.x, 2.) == 0.){
-    //    st = rotate2D(st, PI*.5);
-    //}
-    if(mod(st.x, 2.) < 1.){
-        st = vec2(st.y, -st.x);
+    vec2 st_i = floor(st);
+        if (mod(st_i.x, 2.) == 0.){
+        st = rotate2D(st, PI*.5);
     }
     return fract(st);
 }
@@ -36,16 +44,17 @@ float proceduralSplatter(vec2 st, float radius, float numCircles){
 
 void main() {
     vec2 st = gl_FragCoord.xy/u_resolution;
-    vec3 color = vec3(sin(u_time / 2.));
-    float aspect = u_resolution.x / u_resolution.y;
-    st.x *= aspect; 
-    st += rotate2D(st, PI * .25 * u_time);
+    vec3 color = vec3(1.);
+    //vec3 color = canvasPattern(st, .1, .5, .1);
+
+    st += rotate2D(st, PI * .25);
+    float time = u_time;
     vec2 grid2 = tile(st,2.);
     grid2.y -= .003 * u_mouse.y;
     color = mix(color, vec3(0.2,0.52,0.502 *(u_mouse.x * .003)), proceduralSplatter(grid2, .2 , 10.));
     vec2 grid3 = tile(st, 3.);
 
     grid3 -= .1;
-    color = mix(color, vec3(0.6, 0.3, 0.3), proceduralSplatter(grid3, .2 * sin(u_time), 9.));
+    color = mix(color, vec3(0.6, 0.3, 0.3), proceduralSplatter(grid3, .2 * sin(time), 9.));
     gl_FragColor = vec4(color,1.0);
 }
